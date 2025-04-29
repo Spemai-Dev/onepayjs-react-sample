@@ -1,6 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+interface OnePayResult {
+  code: "201" | "400";
+  transaction_id: string;
+  status: "SUCCESS" | "FAIL";
+}
+type OnePayEvent = CustomEvent<OnePayResult>;
+
 
 function App() {
+
+  const [status, setStatus] = useState<OnePayResult | null>(null);
+
+  /* register once, on mount */
+  useEffect(() => {
+    const handleSuccess = (e: Event) => {
+      const evt = e as OnePayEvent;
+      setStatus(evt.detail);            // update UI / state
+      console.log("✅ payment success", evt.detail);
+    };
+
+    const handleFail = (e: Event) => {
+      const evt = e as OnePayEvent;
+      setStatus(evt.detail);
+      console.log("payment failed", evt.detail);
+    };
+
+    window.addEventListener("onePaySuccess", handleSuccess);
+    window.addEventListener("onePayFail", handleFail);
+
+    /* CLEAN-UP on unmount */
+    return () => {
+      window.removeEventListener("onePaySuccess", handleSuccess);
+      window.removeEventListener("onePayFail", handleFail);
+    };
+  }, []);
+  
+
   const [formData, setFormData] = useState({
     currency: 'LKR',
     amount: '',
